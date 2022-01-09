@@ -1,7 +1,7 @@
 resource "azurerm_network_profile" "container_instance" {
   name                = "azure-container-instance"
-  location            = var.region
-  resource_group_name = azurerm_resource_group.cloudshell.name
+  location            = local.region
+  resource_group_name = local.resource_group_name
   tags                = var.tags
 
   container_network_interface {

@@ -13,7 +13,7 @@ terraform {
       version = "~>2.0"
     }
     http = {
-      source = "hashicorp/http"
+      source  = "hashicorp/http"
       version = "~>2.1.0"
     }
     random = {
@@ -40,6 +40,12 @@ provider "random" {
 
 data "azurerm_client_config" "current" {}
 
+data "azurerm_virtual_network" "current" {
+  count               = local.virtual_network_count == 1 ? 0 : 1
+  name                = var.virtual_network_name
+  resource_group_name = var.virtual_network_resource_group_name
+}
+
 data "azuread_client_config" "current" {}
 
 data "azuread_service_principal" "container_instance" {
@@ -55,4 +61,12 @@ resource "random_string" "resource_suffix" {
   special = false
   lower   = true
   upper   = false
+}
+
+locals {
+  region                = var.virtual_network_name != "" ? data.azurerm_virtual_network.current[0].location : var.region
+  resource_group_name   = var.virtual_network_name != "" ? data.azurerm_virtual_network.current[0].resource_group_name : azurerm_resource_group.cloudshell[0].name
+  virtual_network_count = var.virtual_network_name != "" ? 0 : 1
+  virtual_network_id    = var.virtual_network_name != "" ? data.azurerm_virtual_network.current[0].id : azurerm_virtual_network.cloudshell[0].id
+  virtual_network_name  = var.virtual_network_name != "" ? data.azurerm_virtual_network.current[0].name : azurerm_virtual_network.cloudshell[0].name
 }

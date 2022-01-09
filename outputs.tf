@@ -1,4 +1,4 @@
 output "vnetId" {
-    value = azurerm_virtual_network.cloudshell.id
-    description = "The id of the cloudshell vnet"
+  value       = local.virtual_network_id
+  description = "The id of the cloud Shell Virtual Network"
 }
