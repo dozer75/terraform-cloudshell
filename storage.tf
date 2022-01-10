@@ -1,7 +1,7 @@
 resource "azurerm_storage_account" "cloudshell" {
   name                     = "${replace(var.resource_name, "/-|_/", "")}${coalesce(var.resource_suffix, random_string.resource_suffix.result)}"
-  resource_group_name      = azurerm_resource_group.cloudshell.name
-  location                 = var.region
+  resource_group_name      = local.resource_group_name
+  location                 = local.region
   account_tier             = "Standard"
   account_replication_type = "LRS"
   access_tier              = "Cool"

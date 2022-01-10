@@ -1,7 +1,7 @@
 resource "azurerm_relay_namespace" "cloudshell" {
   name                = "cloudshell-${coalesce(var.resource_suffix, random_string.resource_suffix.result)}"
-  resource_group_name = azurerm_resource_group.cloudshell.name
-  location            = var.region
+  resource_group_name = local.resource_group_name
+  location            = local.region
   sku_name            = "Standard"
   tags                = var.tags
 }
@@ -14,11 +14,11 @@ resource "azurerm_role_assignment" "cloudshell" {
 
 resource "azurerm_private_endpoint" "cloudshell" {
   name                = "cloudshell"
-  resource_group_name = azurerm_resource_group.cloudshell.name
-  location            = var.region
+  resource_group_name = local.resource_group_name
+  location            = local.region
   subnet_id           = azurerm_subnet.relay.id
   tags                = var.tags
-  
+
   private_service_connection {
     name                           = "cloudshell"
     private_connection_resource_id = azurerm_relay_namespace.cloudshell.id
@@ -30,7 +30,7 @@ resource "azurerm_private_endpoint" "cloudshell" {
 resource "azurerm_private_dns_a_record" "cloudshell" {
   name                = azurerm_relay_namespace.cloudshell.name
   zone_name           = azurerm_private_dns_zone.servicebus.name
-  resource_group_name = azurerm_resource_group.cloudshell.name
+  resource_group_name = local.resource_group_name
   ttl                 = 300
   records             = azurerm_private_endpoint.cloudshell.custom_dns_configs[0].ip_addresses
 }

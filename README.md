@@ -1,6 +1,8 @@
-# Cloudshell with Azure private virtual network
+# Cloudshell with Azure private Virtual Network
 
-This project utilize the Terraform project model to create a complete environment that is enabled to run Azure Cloud Shell in a private virtual network.
+This project utilize the Terraform project model to create a complete environment that is enabled to run Azure Cloud Shell in a private Virtual Network.
+
+The Terraform project can both connect to an existing Virtual Network or create a whole new environment that is isolated as a Cloud Shell environment.
 
 ## Background
 
@@ -18,7 +20,7 @@ An environment to run Terraform projects against Azure. Refer to the [Terraform 
 
 ### Azure Container Instance Service
 
-The Azure Container Instance Resource provider needs to be registered in the subscription that holds the virtual network you want to use.
+The Azure Container Instance Resource provider needs to be registered in the subscription that holds the Virtual Network you want to use.
 
 Register this using:
 * Azure CLI
@@ -34,6 +36,20 @@ To be able to execute this terraform project, you need to set the following requ
   * The id of the tenant for your Azure account
 * `subscription_id`
   * The id of the subscription where you want the resources to live
+
+#### Required when using existing Virtual Network
+
+* `virtual_network_name`
+  * Required if the Cloud Shell should connect to an existing Virtual Network
+  * The name of the existing Virtual Network
+* `virtual_network_resource_group_name`
+  * Required if `virtual_network_name` is specified.
+  * The name of the resource group where `virtual_network_name` exists.
+* `virtual_network_cloudshell_subnet_address`, `virtual_network_relay_subnet_address`, `virtual_network_storage_subnet_address` 
+  * Needs to be defined with subnet CIDR that is valid within the existing Virtual Network.
+
+#### Required when creating an isolated Cloud Shell environment (no existing Virtual Network)
+
 * `region`
   * The Azure region you want to locate the cloud shell environment
   * All Cloud shell primary regions except the one below is currently supported
@@ -51,13 +67,18 @@ In addition to the required variables there is several optional variables as wel
   * Certain resources requires to have unique name. By default, the unique name is a combination of `resource_name` and a 8 character suffix. To override this suffix set the `resource_suffix` parameter. The combination `resource_name` and `resource_suffix` must be guaranteed unique for the Azure Storage and Azure Relay services used.
 * `tags`
   * Optional tags that can be added to the environment
-* `virtual_network_address`, `virtual_network_default_subnet_address`, `virtual_network_cloudshell_subnet_address`, `virtual_network_relay_subnet_address`, `virtual_network_storage_subnet_address` 
-  * By default the ip configuration of the virtual network for the cloud shell is based on the `192.168.0.0/24` class c address range. Override this by using these variables.
+
+#### Optional when creating an isolated Cloud Shell environment (no existing Virtual Network)
+
+* `virtual_network_address`, `virtual_network_cloudshell_subnet_address`, `virtual_network_relay_subnet_address`, `virtual_network_storage_subnet_address` 
+  * By default the ip configuration of the Virtual Network for the cloud shell is based on the `192.168.0.0/24` class c address range. Override this by using these variables.
 
 ### Apply terraform script
 
 1. Clone this project to a local folder
-2. Set the required and optional variables by either of the possible ways for Terraform as [documented](https://www.terraform.io/language/values/variables#assigning-values-to-root-module-variables).
+2. Set the required and optional variables
+   * See required and optional variables section for the required and optional based desired configuration.
+   * Refer to Terraform documentation on [setting variables](https://www.terraform.io/language/values/variables#assigning-values-to-root-module-variables).
 3. Run the `terraform apply` command, review the changes an confirm the changes by entering `yes` when questioned.
 
 ### Output
@@ -65,11 +86,13 @@ In addition to the required variables there is several optional variables as wel
 When the terraform operation is done, the project returns the following parameters
 
 * `vnetid`
-  * The resource id of the newly created virtual net. Use this to peer this network to other virtual networks where the Cloud Shell should have access to resources.
+  * The resource id of the newly created virtual net. Use this to peer this network to other Virtual Networks where the Cloud Shell should have access to resources.
 
 ## Further usage
 
-When this project is executed you will need to connect it to the Cloud Shell. To do this you need to follow the following steps:
+When this Terraform project is applied you will need to connect it to the Cloud Shell. 
+
+To do this you need to follow the following steps:
 1. Open the Cloud Shell in the portal or following this [link](https://shell.azure.com).
 2. Select either `Bash` or `PowerShell`.
 3. On the `You have no storage mounted` page select `Show advanced settings` and the `Show VNET isolation settings`.
@@ -79,19 +102,19 @@ When this project is executed you will need to connect it to the Cloud Shell. To
    * Normally, this should fill out all other parameters like `Storage account`, `Virtual network`, `Network profile` and `Relay namespace`, but if it doesn't you will notice that the three latter parameters is disabled. If this is the case, switch the resource group to a another and back and the parameters should be filled accordingly. See this [bug](https://github.com/Azure/CloudShell/issues/131) for more information.
 6. In the `File share` enter the `cloudshell` as the share name (this is created during the terraform).
 
-You will now have a Cloud Shell attached to a virtual network that you can peer with other virtual networks for accessing these.
+You will now have a Cloud Shell attached either to a Virtual Network that you specified or you can peer the newly created Virtual Network with other Virtual Networks for accessing these.
 
 ### Usage tips
 
-When working with other Terraform projects you should peer this virtual network to the one in those Terraform projects. Be sure that resources that isn't publicly accessible has a `depends_on` the peering configuration like this.
+When working with other Terraform projects you should peer this Virtual Network to the one in those Terraform projects. Be sure that resources that isn't publicly accessible has a `depends_on` the peering configuration like this.
 
 ```
-# The cloudshell virtual network peering
+# The cloudshell Virtual Network peering
 resource "azurerm_virtual_network_peering" "cloudshell_peering" {
     # ...
 }
 
-# Denies external access and connect the storage to the storage virtual network.
+# Denies external access and connect the storage to the storage Virtual Network.
 resource "azurerm_storage_account_network_rules" "allow_virtual" {
   storage_account_id         = azurerm_storage_account.storage.id
   bypass                     = ["None"]
